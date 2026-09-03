@@ -1,0 +1,8 @@
+Tipe,ID_Pelanggan,Wilayah_PDAM,Catatan
+PLN,531234567890,,Rumah Induk / Utama
+PLN,531234567891,,Kamar Kost 101
+PDAM,1029384,PDAM_JKT,Kantor Jakarta Pusat
+PDAM,2039485,PDAM_SBY,Gudang Surabaya
+INDIHOME,122333444455,,Wifi Kantor Lt. 1
+BPJS,0001234567890,,BPJS Keluarga Utama
+BPJS,0009876543210,,BPJS Karyawan Toko
