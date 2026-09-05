@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BulkBillChecker - PLN, PDAM, Indihome, BPJS</title>
+  <title>BulkBillChecker - PLN, PDAM, Indihome</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="alternate icon" type="image/x-icon" href="/favicon.svg">
   <meta name="theme-color" content="#2563eb">
@@ -95,7 +95,7 @@
         </div>
         <div>
           <h1 class="font-extrabold text-base text-slate-900 leading-tight">BulkBill<span class="text-blue-600">Checker</span></h1>
-          <p class="text-[11px] text-slate-500 font-medium">Collective Utility Inquiry: PLN • PDAM • Indihome • BPJS</p>
+          <p class="text-[11px] text-slate-500 font-medium">Collective Utility Inquiry: PLN • PDAM • Indihome</p>
         </div>
       </div>
       <div class="flex items-center gap-3">
@@ -165,12 +165,11 @@ PLN, 531234567891, Kamar Kost 101
 PDAM, 1029384, PDAM_JKT, Kantor Jakarta
 PDAM, 2039485, PDAM_SBY, Gudang Surabaya
 INDIHOME, 122333444455, Wifi Kantor
-INDIHOME, 02187654321, Telepon Kantor
-BPJS, 0001234567890, BPJS Mandiri" class="w-full font-mono text-xs p-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition bg-slate-50/50"></textarea>
+INDIHOME, 02187654321, Telepon Kantor" class="w-full font-mono text-xs p-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition bg-slate-50/50"></textarea>
 
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pt-1">
           <div class="text-xs text-slate-500">
-            Supported Categories: <span class="font-semibold text-slate-700">PLN, PDAM, INDIHOME, BPJS</span>
+            Supported Categories: <span class="font-semibold text-slate-700">PLN, PDAM, INDIHOME</span>
           </div>
           <button onclick="processManualText()" class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition flex items-center gap-2">
             <i data-lucide="play" class="w-3.5 h-3.5"></i>
@@ -241,7 +240,7 @@ BPJS, 0001234567890, BPJS Mandiri" class="w-full font-mono text-xs p-3 rounded-x
     <div id="resultsSection" class="hidden space-y-4">
       
       <!-- Summary KPI Cards -->
-      <div id="kpiCardsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+      <div id="kpiCardsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <!-- Card 1: Total Unpaid -->
         <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
           <div class="flex items-center justify-between text-slate-500 text-xs font-semibold">
@@ -289,18 +288,6 @@ BPJS, 0001234567890, BPJS Mandiri" class="w-full font-mono text-xs p-3 rounded-x
             <p id="kpiIndihomeCount" class="text-[11px] text-slate-500 font-medium mt-0.5">0 Accounts</p>
           </div>
         </div>
-
-        <!-- Card 5: BPJS Healthcare -->
-        <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-          <div class="flex items-center justify-between text-slate-500 text-xs font-semibold">
-            <span>BPJS Healthcare</span>
-            <span class="p-1.5 rounded-lg bg-emerald-50 text-emerald-600"><i data-lucide="heart-pulse" class="w-3.5 h-3.5"></i></span>
-          </div>
-          <div class="mt-2">
-            <div id="kpiBpjsAmount" class="text-base font-bold text-slate-900">Rp 0</div>
-            <p id="kpiBpjsCount" class="text-[11px] text-slate-500 font-medium mt-0.5">0 Members</p>
-          </div>
-        </div>
       </div>
 
       <!-- Action Toolbar & Filters -->
@@ -319,7 +306,6 @@ BPJS, 0001234567890, BPJS Mandiri" class="w-full font-mono text-xs p-3 rounded-x
             <option value="PLN">⚡ PLN Electricity</option>
             <option value="PDAM">💧 PDAM Water</option>
             <option value="INDIHOME">🌐 Indihome / Telkom</option>
-            <option value="BPJS">🩺 BPJS Healthcare</option>
           </select>
 
           <!-- Status Filter -->
@@ -351,7 +337,7 @@ BPJS, 0001234567890, BPJS Mandiri" class="w-full font-mono text-xs p-3 rounded-x
           <div class="flex justify-between items-end">
             <div>
               <h2 class="text-sm font-extrabold text-slate-900 uppercase tracking-wider">Collective Utility Bills Summary Report</h2>
-              <p class="text-[10px] text-slate-600">PLN • PDAM • Indihome • BPJS</p>
+              <p class="text-[10px] text-slate-600">PLN • PDAM • Indihome</p>
             </div>
             <div class="text-right text-[10px] text-slate-700 space-y-0.5">
               <p>Print Date: <strong id="printTimestamp" class="text-slate-900">-</strong></p>
@@ -397,7 +383,7 @@ BPJS, 0001234567890, BPJS Mandiri" class="w-full font-mono text-xs p-3 rounded-x
         <i data-lucide="info" class="w-4 h-4 text-blue-600"></i>
         Usage Guide &amp; File Specifications
       </h3>
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-[11px] text-slate-600">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-[11px] text-slate-600">
         <div class="p-3 rounded-lg bg-slate-50 border border-slate-100">
           <p class="font-bold text-slate-800 flex items-center gap-1">⚡ PLN Electricity</p>
           <p class="mt-1">11-12 digit ID. Retrieves real customer name, tariff rating (VA), and live meter usage.</p>
@@ -409,10 +395,6 @@ BPJS, 0001234567890, BPJS Mandiri" class="w-full font-mono text-xs p-3 rounded-x
         <div class="p-3 rounded-lg bg-slate-50 border border-slate-100">
           <p class="font-bold text-slate-800 flex items-center gap-1">🌐 Indihome / Telkom</p>
           <p class="mt-1">Indihome Internet (1116...) or Landline (0778...). Automatically detects paid/unpaid status.</p>
-        </div>
-        <div class="p-3 rounded-lg bg-slate-50 border border-slate-100">
-          <p class="font-bold text-slate-800 flex items-center gap-1">🩺 BPJS Healthcare</p>
-          <p class="mt-1">11-16 digit Card / VA number. Calculates family tier class (Class 1, 2, or 3).</p>
         </div>
       </div>
     </div>
@@ -542,9 +524,7 @@ BPJS, 0001234567890, BPJS Mandiri" class="w-full font-mono text-xs p-3 rounded-x
         { type: 'INDIHOME', customerId: '122333444455', note: 'Wifi Kantor Utama' },
         { type: 'INDIHOME', customerId: '122333444456', note: 'Wifi Kost Lantai 1' },
         { type: 'INDIHOME', customerId: '122333444457', note: 'Wifi Kost Lantai 2' },
-        { type: 'INDIHOME', customerId: '02187654321', note: 'Telepon Kantor' },
-        { type: 'BPJS', customerId: '0001234567890', note: 'BPJS Mandiri Keluarga' },
-        { type: 'BPJS', customerId: '0009876543210', note: 'BPJS Karyawan Toko' }
+        { type: 'INDIHOME', customerId: '02187654321', note: 'Telepon Kantor' }
       ];
 
       executeBulkInquiry(demoItems);
@@ -690,11 +670,6 @@ BPJS, 0001234567890, BPJS Mandiri" class="w-full font-mono text-xs p-3 rounded-x
 
       document.getElementById('kpiIndihomeAmount').textContent = summary.breakdown.indihome.formatted;
       document.getElementById('kpiIndihomeCount').textContent = `${summary.breakdown.indihome.count} Accounts`;
-
-      if (summary.breakdown.bpjs) {
-        document.getElementById('kpiBpjsAmount').textContent = summary.breakdown.bpjs.formatted;
-        document.getElementById('kpiBpjsCount').textContent = `${summary.breakdown.bpjs.count} Members`;
-      }
     }
 
     // Render Compact Table with Utility Section Dividers
@@ -724,8 +699,8 @@ BPJS, 0001234567890, BPJS Mandiri" class="w-full font-mono text-xs p-3 rounded-x
         return;
       }
 
-      // Sort by Utility Type first: PLN -> PDAM -> INDIHOME -> BPJS
-      const typeOrder = { 'PLN': 1, 'PDAM': 2, 'INDIHOME': 3, 'BPJS': 4, 'BPJS_KESEHATAN': 4 };
+      // Sort by Utility Type first: PLN -> PDAM -> INDIHOME
+      const typeOrder = { 'PLN': 1, 'PDAM': 2, 'INDIHOME': 3 };
       filtered.sort((a, b) => {
         const orderA = typeOrder[a.type] || 99;
         const orderB = typeOrder[b.type] || 99;
@@ -739,7 +714,7 @@ BPJS, 0001234567890, BPJS Mandiri" class="w-full font-mono text-xs p-3 rounded-x
       const subtotalPerType = {};
       const countPerType = {};
       filtered.forEach(r => {
-        const t = (r.type === 'BPJS_KESEHATAN') ? 'BPJS' : r.type;
+        const t = r.type;
         subtotalPerType[t] = (subtotalPerType[t] || 0) + (r.status === 'UNPAID' ? (r.totalAmount || 0) : 0);
         countPerType[t] = (countPerType[t] || 0) + 1;
       });
@@ -747,16 +722,14 @@ BPJS, 0001234567890, BPJS Mandiri" class="w-full font-mono text-xs p-3 rounded-x
       const sectionMeta = {
         'PLN': { title: '⚡ PLN ELECTRICITY BILLS', bg: 'bg-amber-100/70 text-amber-950 border-amber-300' },
         'PDAM': { title: '💧 PDAM CLEAN WATER (PAM BATAM)', bg: 'bg-cyan-100/70 text-cyan-950 border-cyan-300' },
-        'INDIHOME': { title: '🌐 INTERNET & TELECOM (TELKOM / INDIHOME)', bg: 'bg-rose-100/70 text-rose-950 border-rose-300' },
-        'BPJS': { title: '🩺 BPJS HEALTHCARE BILLS', bg: 'bg-emerald-100/70 text-emerald-950 border-emerald-300' },
-        'BPJS_KESEHATAN': { title: '🩺 BPJS HEALTHCARE BILLS', bg: 'bg-emerald-100/70 text-emerald-950 border-emerald-300' }
+        'INDIHOME': { title: '🌐 INTERNET & TELECOM (TELKOM / INDIHOME)', bg: 'bg-rose-100/70 text-rose-950 border-rose-300' }
       };
 
       let lastType = null;
       let rowNumber = 0;
 
       filtered.forEach((r) => {
-        const normType = (r.type === 'BPJS_KESEHATAN') ? 'BPJS' : r.type;
+        const normType = r.type;
 
         // Render Section Header Divider
         if (normType !== lastType) {
@@ -793,8 +766,6 @@ BPJS, 0001234567890, BPJS Mandiri" class="w-full font-mono text-xs p-3 rounded-x
           billerBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 whitespace-nowrap">⚡ PLN${liveIndicator}</span>`;
         } else if (r.type === 'PDAM') {
           billerBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-100 text-cyan-800 whitespace-nowrap">💧 PDAM${liveIndicator}</span>`;
-        } else if (r.type === 'BPJS' || r.type === 'BPJS_KESEHATAN') {
-          billerBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 whitespace-nowrap">🩺 BPJS</span>`;
         } else {
           billerBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800 whitespace-nowrap">🌐 TELKOM${liveIndicator}</span>`;
         }
@@ -890,9 +861,6 @@ BPJS, 0001234567890, BPJS Mandiri" class="w-full font-mono text-xs p-3 rounded-x
       } else if (item.type === 'PDAM') {
         icon.className = 'w-7 h-7 rounded-lg flex items-center justify-center text-white bg-cyan-600';
         icon.innerHTML = '<i data-lucide="droplet" class="w-4 h-4"></i>';
-      } else if (item.type === 'BPJS' || item.type === 'BPJS_KESEHATAN') {
-        icon.className = 'w-7 h-7 rounded-lg flex items-center justify-center text-white bg-emerald-600';
-        icon.innerHTML = '<i data-lucide="heart-pulse" class="w-4 h-4"></i>';
       } else {
         icon.className = 'w-7 h-7 rounded-lg flex items-center justify-center text-white bg-rose-600';
         icon.innerHTML = '<i data-lucide="wifi" class="w-4 h-4"></i>';
@@ -928,31 +896,6 @@ BPJS, 0001234567890, BPJS Mandiri" class="w-full font-mono text-xs p-3 rounded-x
             <span class="font-medium text-slate-800">Clean Water Connection (PDAM)</span>
           </div>
         `;
-      } else if (item.type === 'BPJS' || item.type === 'BPJS_KESEHATAN') {
-        if (d.careClass) {
-          extraRows += `
-            <div class="flex justify-between py-1 border-b border-slate-100">
-              <span class="text-slate-500">Tier / Care Class</span>
-              <span class="font-bold text-slate-800">${d.careClass}</span>
-            </div>
-          `;
-        }
-        if (d.familyMembers) {
-          extraRows += `
-            <div class="flex justify-between py-1 border-b border-slate-100">
-              <span class="text-slate-500">Covered Members</span>
-              <span class="font-semibold text-slate-800">${d.familyMembers}</span>
-            </div>
-          `;
-        }
-        if (d.ratePerPerson) {
-          extraRows += `
-            <div class="flex justify-between py-1 border-b border-slate-100">
-              <span class="text-slate-500">Rate per Person</span>
-              <span class="font-mono text-slate-800">${formatRupiahJs(d.ratePerPerson)}</span>
-            </div>
-          `;
-        }
       } else if (item.type === 'INDIHOME') {
         const layanan = d.serviceType || (item.customerId.startsWith('0') ? 'Landline Phone (PSTN Telkom)' : 'Internet Fiber & TV (Indihome)');
         extraRows += `
