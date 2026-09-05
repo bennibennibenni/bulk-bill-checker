@@ -1,0 +1,33 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563eb" />
+      <stop offset="50%" stop-color="#4f46e5" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+    <linearGradient id="paper" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#f1f5f9" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="1.5" flood-opacity="0.25" />
+    </filter>
+  </defs>
+  <!-- Background Squircle -->
+  <rect width="64" height="64" rx="16" fill="url(#bg)" />
+  
+  <!-- Receipt Paper with subtle shadow -->
+  <path d="M17 12 C17 10.5 18.5 9 20.5 9 H43.5 C45 9 46.5 10.5 46.5 12 V48 L42.5 45.5 L38.5 48 L34.5 45.5 L30.5 48 L26.5 45.5 L22.5 48 L17 45 Z" fill="url(#paper)" filter="url(#shadow)" />
+
+  <!-- Receipt Lines (Utility breakdown) -->
+  <line x1="22" y1="16" x2="35" y2="16" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round" />
+  <line x1="22" y1="22" x2="41" y2="22" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" />
+  <line x1="22" y1="27" x2="36" y2="27" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" />
+  
+  <!-- Utility Spark Symbol (Electricity/Service) -->
+  <path d="M26 33 L23 38 H27.5 L25 43 L32 37 H27.5 Z" fill="#f59e0b" />
+
+  <!-- Verification Check Badge -->
+  <circle cx="45" cy="45" r="11.5" fill="#10b981" stroke="#ffffff" stroke-width="2.5" />
+  <path d="M40.5 45 L43.5 48 L49.5 42" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+</svg>

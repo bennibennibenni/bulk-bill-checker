@@ -4,10 +4,12 @@
  * serta Simulator Engine untuk produk yang memerlukan CAPTCHA/Biller internal.
  */
 
+require("dotenv").config();
 const axios = require("axios");
 
 const SEPULSA_API_URL = "https://api.sepulsa.com/api/v1/carts/add/";
 const SEPULSA_OPTION_URL = "https://api.sepulsa.com/api/v1/oscar/options/1/";
+const ZENROWS_API_URL = "https://api.zenrows.com/v1/";
 
 const SEPULSA_PRODUCTS = {
   PLN: "http://api.sepulsa.com/api/v1/oscar/products/14/",
@@ -132,18 +134,74 @@ async function inquirySepulsaLive(type, customerId, region, note) {
     });
   }
 
+  const isBpjs = type === "BPJS" || type === "BPJS_KESEHATAN";
+  const zenrowsApiKey = process.env.ZENROWS_API_KEY;
+
+  let requestUrl = SEPULSA_API_URL;
+  let requestHeaders = { ...SEPULSA_HEADERS };
+  let requestParams = undefined;
+  let usedZenRows = false;
+
+  // Jika BPJS dan memiliki ZENROWS_API_KEY, langsung bypass CAPTCHA menggunakan ZenRows Anti-Bot
+  if (isBpjs && zenrowsApiKey && zenrowsApiKey !== "your_zenrows_api_key_here") {
+    usedZenRows = true;
+    requestUrl = ZENROWS_API_URL;
+    requestParams = {
+      apikey: zenrowsApiKey,
+      url: SEPULSA_API_URL,
+      antibot: "true",
+      custom_headers: "true",
+    };
+    requestHeaders["Content-Type"] = "application/json";
+  }
+
   try {
-    const res = await axios.post(SEPULSA_API_URL, payload, {
-      headers: SEPULSA_HEADERS,
-      timeout: 18000,
-    });
+    let res;
+    try {
+      res = await axios({
+        method: "POST",
+        url: requestUrl,
+        params: requestParams,
+        headers: requestHeaders,
+        data: payload,
+        timeout: usedZenRows ? 45000 : 18000,
+      });
+    } catch (requestErr) {
+      // Jika direct call gagal dengan HTTP 406 (CAPTCHA) dan ZENROWS_API_KEY tersedia, coba lagi via ZenRows
+      if (
+        !usedZenRows &&
+        requestErr.response?.status === 406 &&
+        zenrowsApiKey &&
+        zenrowsApiKey !== "your_zenrows_api_key_here"
+      ) {
+        usedZenRows = true;
+        res = await axios({
+          method: "POST",
+          url: ZENROWS_API_URL,
+          params: {
+            apikey: zenrowsApiKey,
+            url: SEPULSA_API_URL,
+            antibot: "true",
+            custom_headers: "true",
+          },
+          headers: {
+            "Content-Type": "application/json",
+            ...SEPULSA_HEADERS,
+          },
+          data: payload,
+          timeout: 45000,
+        });
+      } else {
+        throw requestErr;
+      }
+    }
 
     const line = res.data?.data?.lines?.[0];
     if (!line) {
       throw new Error("Respon Sepulsa kosong");
     }
 
-    const inqAttr = line.attributes.find(
+    const inqAttr = line.attributes?.find(
       (a) => a.option?.code === "inquiry_details" || a.option?.code === "payment_details"
     );
 
@@ -152,13 +210,14 @@ async function inquirySepulsaLive(type, customerId, region, note) {
       details = typeof inqAttr.value === "string" ? JSON.parse(inqAttr.value) : inqAttr.value;
     }
 
-    const billAmount = parseCurrency(details["Jumlah Tagihan"] || details["tagihan"] || 0);
-    const adminFee = parseCurrency(details["Biaya Admin"] || line.stockrecord?.admin_fee || 4450);
-    const totalAmount = parseCurrency(res.data.data?.total_incl_fee) || (billAmount + adminFee);
-    const customerName = details["Nama Pelanggan"] || details["nama_pelanggan"] || "-";
-    const tarifDaya = details["Tarif / Daya"] || details["Tarif/Daya"] || details["Paket"] || "-";
+    const billAmount = parseCurrency(details["Jumlah Tagihan"] || details["tagihan"] || details["Tagihan"] || 0);
+    const adminFee = parseCurrency(details["Biaya Admin"] || details["admin"] || line.stockrecord?.admin_fee || (isBpjs ? 2500 : 4450));
+    const totalAmount = parseCurrency(res.data?.data?.total_incl_fee) || (billAmount + adminFee);
+    const customerName = details["Nama Pelanggan"] || details["nama_pelanggan"] || details["Nama Peserta"] || "-";
+    const tarifDaya = details["Tarif / Daya"] || details["Tarif/Daya"] || details["Paket"] || details["Kelas"] || "-";
     const standMeter = details["Stand Meter"] || "";
-    const period = details["Periode"] || "-";
+    const period = details["Periode"] || details["Jumlah Bulan"] || "-";
+    const familyMembers = details["Jumlah Peserta"] || details["Jumlah Anggota"] || details["Anggota Keluarga"] || "";
 
     const cleanCustomerId = customerId.toString().trim();
     let serviceType = "";
@@ -171,6 +230,9 @@ async function inquirySepulsaLive(type, customerId, region, note) {
     } else if (type === "INDIHOME") {
       serviceType = cleanCustomerId.startsWith("0") ? "Telepon Rumah / Kantor (PSTN Telkom)" : "Internet Fiber & TV (Indihome)";
       regionName = "Telkom Regional";
+    } else if (isBpjs) {
+      serviceType = "Iuran BPJS Kesehatan Mandiri";
+      regionName = "BPJS Kesehatan RI";
     }
 
     return {
@@ -184,23 +246,25 @@ async function inquirySepulsaLive(type, customerId, region, note) {
       totalAmount,
       formattedTotal: formatRupiah(totalAmount),
       details: {
-        product: line.stockrecord?.product_label || serviceType,
+        product: line.stockrecord?.product_label || (isBpjs ? "BPJS KESEHATAN" : serviceType),
         serviceType,
         regionName,
         wilayah: regionName,
         tariff: tarifDaya,
         power: tarifDaya,
+        careClass: details["Kelas"] || tarifDaya,
+        familyMembers: familyMembers,
         period,
         meterStart: standMeter && standMeter.includes("-") ? standMeter.split("-")[0] : "",
         meterEnd: standMeter && standMeter.includes("-") ? standMeter.split("-")[1] : "",
         usageKwh: standMeter && standMeter.includes("-") ? parseCurrency(standMeter.split("-")[1]) - parseCurrency(standMeter.split("-")[0]) : "",
         billAmount,
-        penaltyAmount: 0,
+        penaltyAmount: parseCurrency(details["Denda"] || 0),
         adminFee,
         totalAmount,
         formattedTotal: formatRupiah(totalAmount),
       },
-      source: "LIVE_SEPULSA",
+      source: usedZenRows ? "LIVE_SEPULSA_ZENROWS" : "LIVE_SEPULSA",
       timestamp: new Date().toISOString(),
     };
   } catch (err) {
@@ -218,8 +282,8 @@ async function inquirySepulsaLive(type, customerId, region, note) {
         firstErr.code === "50"
       ) {
         const cleanCustomerId = customerId.toString().trim();
-        const serviceType = type === "PLN" ? "Listrik Pascabayar (PLN)" : (type === "PDAM" ? "Air Bersih PDAM" : (type === "BPJS" ? "BPJS Kesehatan" : (cleanCustomerId.startsWith("0") ? "Telepon Kabel (PSTN Telkom)" : "Internet Fiber (Indihome Telkom)")));
-        const regionName = type === "PDAM" ? "PAM Batam" : "";
+        const serviceType = type === "PLN" ? "Listrik Pascabayar (PLN)" : (type === "PDAM" ? "Air Bersih PDAM" : (isBpjs ? "Iuran BPJS Kesehatan" : (cleanCustomerId.startsWith("0") ? "Telepon Kabel (PSTN Telkom)" : "Internet Fiber (Indihome Telkom)")));
+        const regionName = type === "PDAM" ? "PAM Batam" : (isBpjs ? "BPJS Kesehatan" : "");
         return {
           success: true,
           type,
@@ -231,7 +295,7 @@ async function inquirySepulsaLive(type, customerId, region, note) {
           totalAmount: 0,
           formattedTotal: "Rp 0 (Lunas)",
           details: {
-            product: type === "PLN" ? "PLN PASCABAYAR" : (type === "PDAM" ? "AIR BERSIH PDAM" : (type === "BPJS" ? "BPJS KESEHATAN" : "INDIHOME TELKOM")),
+            product: type === "PLN" ? "PLN PASCABAYAR" : (type === "PDAM" ? "AIR BERSIH PDAM" : (isBpjs ? "BPJS KESEHATAN" : "INDIHOME TELKOM")),
             serviceType,
             regionName,
             period: "Bulan Berjalan",
@@ -241,17 +305,26 @@ async function inquirySepulsaLive(type, customerId, region, note) {
             totalAmount: 0,
             formattedTotal: "Rp 0 (Lunas)",
           },
-          source: "LIVE_SEPULSA",
+          source: usedZenRows ? "LIVE_SEPULSA_ZENROWS" : "LIVE_SEPULSA",
           timestamp: new Date().toISOString(),
         };
       }
 
-      // Pesan error spesifik dari Gateway Sepulsa
+      // Pesan error spesifik dari Gateway Sepulsa / ZenRows
       let errorMsg = firstErr.detail || (typeof errData.message === "string" ? errData.message : null);
-      if (!errorMsg && err.response.status === 406) {
-        errorMsg = "Gateway Error 406: Endpoint dilindungi CAPTCHA / Tidak dapat diakses via API langsung";
+
+      if (err.response.status === 401 && (err.config?.url?.includes("zenrows") || err.response?.data?.code === "UNAUTHORIZED")) {
+        errorMsg = "ZenRows Error 401: ZENROWS_API_KEY tidak valid atau belum aktif. Periksa file .env";
+      } else if (err.response.status === 429 && err.config?.url?.includes("zenrows")) {
+        errorMsg = "ZenRows Error 429: Batas kuota permintaan ZenRows telah tercapai";
+      } else if (err.response.status === 406 || (errorMsg && errorMsg.toLowerCase().includes("not acceptable"))) {
+        if (isBpjs) {
+          errorMsg = "Pengecekan BPJS membutuhkan bypass CAPTCHA. Silakan atur ZENROWS_API_KEY di file .env";
+        } else {
+          errorMsg = "Gateway Error 406: Endpoint dilindungi CAPTCHA / Tidak dapat diakses via API langsung";
+        }
       } else if (!errorMsg) {
-        errorMsg = `Gateway Sepulsa Error HTTP ${err.response.status}`;
+        errorMsg = `Gateway Error HTTP ${err.response.status}`;
       }
 
       return {
@@ -269,7 +342,7 @@ async function inquirySepulsaLive(type, customerId, region, note) {
           errorDetail: errorMsg,
           httpStatus: err.response.status,
         },
-        source: "LIVE_SEPULSA",
+        source: usedZenRows ? "LIVE_SEPULSA_ZENROWS" : "LIVE_SEPULSA",
         timestamp: new Date().toISOString(),
       };
     }
@@ -286,7 +359,7 @@ async function inquirySepulsaLive(type, customerId, region, note) {
       errorMessage: `Gateway Live Connection Error: ${err.message}`,
       totalAmount: 0,
       formattedTotal: "Rp 0",
-      source: "LIVE_SEPULSA",
+      source: usedZenRows ? "LIVE_SEPULSA_ZENROWS" : "LIVE_SEPULSA",
       timestamp: new Date().toISOString(),
     };
   }
@@ -419,7 +492,14 @@ async function processBulkInquiry(items, concurrency = 3, delayMs = 250) {
         continue;
       }
 
-      // Semua permintaan diproses LANGSUNG ke Live Gateway Sepulsa
+      // Jika mode SIMULATOR aktif di .env
+      if (process.env.BILLER_MODE === "SIMULATOR") {
+        const mockResult = mockInquiry(current);
+        results.push(mockResult);
+        continue;
+      }
+
+      // Pemrosesan via Live Gateway Sepulsa (dengan ZenRows untuk BPJS)
       if (delayMs > 0) {
         await new Promise((r) => setTimeout(r, delayMs));
       }

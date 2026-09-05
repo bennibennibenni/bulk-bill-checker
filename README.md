@@ -74,6 +74,9 @@ Isi konfigurasi `.env`:
 ```env
 PORT=3000
 BILLER_MODE=LIVE
+
+# ZenRows API Key (Digunakan untuk bypass CAPTCHA saat pengecekan live BPJS Kesehatan)
+ZENROWS_API_KEY=your_zenrows_api_key_here
 ```
 
 ### 4. Jalankan Aplikasi
@@ -171,6 +174,7 @@ bulk-bill-checker/
 ├── api/
 │   └── index.js              # Serverless entry point untuk Vercel
 ├── public/
+│   ├── favicon.svg           # Icon favicon web vektor modern
 │   └── index.html            # Antarmuka web (Tailwind CSS, Lucide icons, print layout)
 ├── services/
 │   └── billerService.js      # Core logic inquiry (Live Gateway, parser, formatting)
