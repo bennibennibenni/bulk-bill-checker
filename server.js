@@ -55,8 +55,8 @@ app.post("/api/inquiry/bulk", async (req, res) => {
     const results = await processBulkInquiry(items, concurrency);
 
     // Hitung ringkasan statistik
-    // Urutkan (sort) results by tipe: PLN -> PDAM -> INDIHOME
-    const typeOrder = { PLN: 1, PDAM: 2, INDIHOME: 3 };
+    // Urutkan (sort) results by tipe: PLN -> PDAM -> INDIHOME -> BPJS
+    const typeOrder = { PLN: 1, PDAM: 2, INDIHOME: 3, BPJS: 4, BPJS_KESEHATAN: 4 };
     results.sort((a, b) => {
       const orderA = typeOrder[a.type] || 99;
       const orderB = typeOrder[b.type] || 99;
@@ -94,6 +94,12 @@ app.post("/api/inquiry/bulk", async (req, res) => {
           .filter((r) => r.type === "INDIHOME")
           .reduce((sum, r) => sum + (r.totalAmount || 0), 0),
       },
+      bpjs: {
+        count: successfulItems.filter((r) => r.type === "BPJS" || r.type === "BPJS_KESEHATAN").length,
+        unpaidAmount: unpaidItems
+          .filter((r) => r.type === "BPJS" || r.type === "BPJS_KESEHATAN")
+          .reduce((sum, r) => sum + (r.totalAmount || 0), 0),
+      },
     };
 
     res.json({
@@ -110,6 +116,7 @@ app.post("/api/inquiry/bulk", async (req, res) => {
           pln: { ...breakdown.pln, formatted: formatRupiah(breakdown.pln.unpaidAmount) },
           pdam: { ...breakdown.pdam, formatted: formatRupiah(breakdown.pdam.unpaidAmount) },
           indihome: { ...breakdown.indihome, formatted: formatRupiah(breakdown.indihome.unpaidAmount) },
+          bpjs: { ...breakdown.bpjs, formatted: formatRupiah(breakdown.bpjs.unpaidAmount) },
         },
       },
       results,
@@ -164,6 +171,7 @@ app.post("/api/upload", upload.single("file"), (req, res) => {
           if (upper.includes("PLN")) type = "PLN";
           else if (upper.includes("PDAM") || upper.includes("AIR")) type = "PDAM";
           else if (upper.includes("INDIHOME") || upper.includes("TELKOM") || upper.includes("INTERNET")) type = "INDIHOME";
+          else if (upper.includes("BPJS") || upper.includes("KESEHATAN")) type = "BPJS";
         } else if (
           k.includes("id") ||
           k.includes("pelanggan") ||
@@ -220,34 +228,40 @@ app.get("/api/template/excel", (req, res) => {
   try {
     const templateData = [
       {
-        "Tipe Tagihan (PLN/PDAM/INDIHOME)": "PLN",
+        "Tipe Tagihan (PLN/PDAM/INDIHOME/BPJS)": "PLN",
         "ID Pelanggan / No Meter": "531234567890",
         "Kode Wilayah PDAM (Khusus PDAM)": "",
         "Catatan / Nama Unit": "Rumah Utama Lt. 1",
       },
       {
-        "Tipe Tagihan (PLN/PDAM/INDIHOME)": "PLN",
+        "Tipe Tagihan (PLN/PDAM/INDIHOME/BPJS)": "PLN",
         "ID Pelanggan / No Meter": "531234567891",
         "Kode Wilayah PDAM (Khusus PDAM)": "",
         "Catatan / Nama Unit": "Kamar Kost 101",
       },
       {
-        "Tipe Tagihan (PLN/PDAM/INDIHOME)": "PDAM",
+        "Tipe Tagihan (PLN/PDAM/INDIHOME/BPJS)": "PDAM",
         "ID Pelanggan / No Meter": "1029384",
         "Kode Wilayah PDAM (Khusus PDAM)": "PDAM_JKT",
         "Catatan / Nama Unit": "Kantor Jakarta",
       },
       {
-        "Tipe Tagihan (PLN/PDAM/INDIHOME)": "PDAM",
+        "Tipe Tagihan (PLN/PDAM/INDIHOME/BPJS)": "PDAM",
         "ID Pelanggan / No Meter": "2039485",
         "Kode Wilayah PDAM (Khusus PDAM)": "PDAM_SBY",
         "Catatan / Nama Unit": "Gudang Surabaya",
       },
       {
-        "Tipe Tagihan (PLN/PDAM/INDIHOME)": "INDIHOME",
+        "Tipe Tagihan (PLN/PDAM/INDIHOME/BPJS)": "INDIHOME",
         "ID Pelanggan / No Meter": "122333444455",
         "Kode Wilayah PDAM (Khusus PDAM)": "",
         "Catatan / Nama Unit": "Internet Wifi Kantor",
+      },
+      {
+        "Tipe Tagihan (PLN/PDAM/INDIHOME/BPJS)": "BPJS",
+        "ID Pelanggan / No Meter": "0001234567890",
+        "Kode Wilayah PDAM (Khusus PDAM)": "",
+        "Catatan / Nama Unit": "BPJS Keluarga Bpk Budi",
       },
     ];
 
@@ -272,7 +286,7 @@ app.get("/api/template/excel", (req, res) => {
 
     res.setHeader(
       "Content-Disposition",
-      'attachment; filename="Template_Bulk_Tagihan_PLN_PDAM_Indihome.xlsx"'
+      'attachment; filename="Template_Bulk_Tagihan_PLN_PDAM_Indihome_BPJS.xlsx"'
     );
     res.setHeader(
       "Content-Type",
@@ -292,7 +306,8 @@ app.get("/api/template/csv", (req, res) => {
     "PLN,531234567891,,Kost Kamar 01\n" +
     "PDAM,1029384,PDAM_JKT,Kantor Jakarta\n" +
     "PDAM,2039485,PDAM_SBY,Gudang Surabaya\n" +
-    "INDIHOME,122333444455,,Wifi Lt 2\n";
+    "INDIHOME,122333444455,,Wifi Lt 2\n" +
+    "BPJS,0001234567890,,BPJS Keluarga Utama\n";
 
   res.setHeader(
     "Content-Disposition",

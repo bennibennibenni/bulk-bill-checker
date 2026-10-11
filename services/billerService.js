@@ -1,5 +1,5 @@
 /**
- * Service Handler untuk Inquiry Tagihan PLN, PDAM, dan Indihome.
+ * Service Handler untuk Inquiry Tagihan PLN, PDAM, Indihome, dan BPJS.
  * Terintegrasi langsung dengan Live Engine Sepulsa.
  */
 
@@ -14,6 +14,7 @@ const SEPULSA_PRODUCTS = {
   INDIHOME: "http://api.sepulsa.com/api/v1/oscar/products/34/",
   PDAM_BATAM: "http://api.sepulsa.com/api/v1/oscar/products/920/",
   PDAM_PADANG: "http://api.sepulsa.com/api/v1/oscar/products/988/",
+  BPJS: "http://api.sepulsa.com/api/v1/oscar/products/15/",
 };
 
 const SEPULSA_HEADERS = {
@@ -84,8 +85,12 @@ function validateCustomerInput(type, customerId, region) {
     if (cleanId.length < 4 || cleanId.length > 12) {
       return "Nomor Pelanggan PDAM umumnya 4-12 digit";
     }
+  } else if (type === "BPJS" || type === "BPJS_KESEHATAN") {
+    if (cleanId.length < 11 || cleanId.length > 16) {
+      return "Nomor Kartu / Virtual Account BPJS Kesehatan harus 11-16 digit";
+    }
   } else {
-    return `Kategori tagihan '${type}' tidak didukung (harus PLN, PDAM, atau INDIHOME)`;
+    return `Kategori tagihan '${type}' tidak didukung (harus PLN, PDAM, INDIHOME, atau BPJS)`;
   }
 
   return null;
@@ -93,9 +98,43 @@ function validateCustomerInput(type, customerId, region) {
 
 /**
  * Pengecekan Riil via Live Sepulsa Cart API
- * Semua produk (PLN, PDAM, INDIHOME) diproses langsung ke Sepulsa.
+ * Semua produk (PLN, PDAM, INDIHOME, BPJS) diproses langsung ke Sepulsa.
  */
 async function inquirySepulsaLive(type, customerId, region, note) {
+  const isBpjs = type === "BPJS" || type === "BPJS_KESEHATAN";
+
+  // Khusus BPJS: Tidak perlu hit API karena proteksi CAPTCHA Sepulsa, langsung arahkan ke link resmi
+  if (isBpjs) {
+    const cleanId = customerId.toString().trim();
+    const sepulsaUrl = "https://www.sepulsa.com/transaction/bpjs-kesehatan";
+    return {
+      success: true,
+      type: "BPJS",
+      customerId: cleanId,
+      customerName: "Portal Sepulsa BPJS",
+      note,
+      status: "REDIRECT",
+      statusLabel: "CEK DI SEPULSA ↗",
+      totalAmount: 0,
+      formattedTotal: "Klik Tautan ↗",
+      redirectUrl: sepulsaUrl,
+      details: {
+        product: "BPJS KESEHATAN",
+        serviceType: "Iuran BPJS Kesehatan Mandiri",
+        regionName: "BPJS Kesehatan RI",
+        period: "Bulan Berjalan",
+        billAmount: 0,
+        adminFee: 0,
+        totalAmount: 0,
+        formattedTotal: "-",
+        redirectUrl: sepulsaUrl,
+        actionNote: "Pengecekan BPJS membutuhkan verifikasi CAPTCHA di web resmi Sepulsa.",
+      },
+      source: "SEPULSA_REDIRECT",
+      timestamp: new Date().toISOString(),
+    };
+  }
+
   let productUrl = SEPULSA_PRODUCTS.PLN;
   if (type === "INDIHOME") {
     productUrl = SEPULSA_PRODUCTS.INDIHOME;
@@ -152,7 +191,7 @@ throw requestErr;
     }
 
     const billAmount = parseCurrency(details["Jumlah Tagihan"] || details["tagihan"] || details["Tagihan"] || 0);
-    const adminFee = parseCurrency(details["Biaya Admin"] || details["admin"] || line.stockrecord?.admin_fee || 4450);
+    const adminFee = parseCurrency(details["Biaya Admin"] || details["admin"] || line.stockrecord?.admin_fee || (isBpjs ? 2500 : 4450));
     const totalAmount = parseCurrency(res.data?.data?.total_incl_fee) || (billAmount + adminFee);
     const customerName = details["Nama Pelanggan"] || details["nama_pelanggan"] || details["Nama Peserta"] || "-";
     const tarifDaya = details["Tarif / Daya"] || details["Tarif/Daya"] || details["Paket"] || details["Kelas"] || "-";
@@ -171,7 +210,9 @@ throw requestErr;
     } else if (type === "INDIHOME") {
       serviceType = cleanCustomerId.startsWith("0") ? "Telepon Rumah / Kantor (PSTN Telkom)" : "Internet Fiber & TV (Indihome)";
       regionName = "Telkom Regional";
-
+    } else if (isBpjs) {
+      serviceType = "Iuran BPJS Kesehatan Mandiri";
+      regionName = "BPJS Kesehatan RI";
     }
 
     return {
@@ -185,7 +226,7 @@ throw requestErr;
       totalAmount,
       formattedTotal: formatRupiah(totalAmount),
       details: {
-        product: line.stockrecord?.product_label || serviceType,
+        product: line.stockrecord?.product_label || (isBpjs ? "BPJS KESEHATAN" : serviceType),
         serviceType,
         regionName,
         wilayah: regionName,
@@ -221,8 +262,8 @@ throw requestErr;
         firstErr.code === "50"
       ) {
         const cleanCustomerId = customerId.toString().trim();
-        const serviceType = type === "PLN" ? "Listrik Pascabayar (PLN)" : (type === "PDAM" ? "Air Bersih PDAM" : (cleanCustomerId.startsWith("0") ? "Telepon Kabel (PSTN Telkom)" : "Internet Fiber (Indihome Telkom)"));
-        const regionName = type === "PDAM" ? "PAM Batam" : "";
+        const serviceType = type === "PLN" ? "Listrik Pascabayar (PLN)" : (type === "PDAM" ? "Air Bersih PDAM" : (isBpjs ? "Iuran BPJS Kesehatan" : (cleanCustomerId.startsWith("0") ? "Telepon Kabel (PSTN Telkom)" : "Internet Fiber (Indihome Telkom)")));
+        const regionName = type === "PDAM" ? "PAM Batam" : (isBpjs ? "BPJS Kesehatan" : "");
         return {
           success: true,
           type,
@@ -234,7 +275,7 @@ throw requestErr;
           totalAmount: 0,
           formattedTotal: "Rp 0 (Lunas)",
           details: {
-            product: type === "PLN" ? "PLN PASCABAYAR" : (type === "PDAM" ? "AIR BERSIH PDAM" : "INDIHOME TELKOM"),
+            product: type === "PLN" ? "PLN PASCABAYAR" : (type === "PDAM" ? "AIR BERSIH PDAM" : (isBpjs ? "BPJS KESEHATAN" : "INDIHOME TELKOM")),
             serviceType,
             regionName,
             period: "Bulan Berjalan",
@@ -253,7 +294,9 @@ throw requestErr;
       let errorMsg = firstErr.detail || (typeof errData.message === "string" ? errData.message : null);
 
       if (err.response.status === 406 || (errorMsg && errorMsg.toLowerCase().includes("not acceptable"))) {
-        errorMsg = "Gateway Error 406: Endpoint dilindungi CAPTCHA / Tidak dapat diakses via API langsung";
+        errorMsg = isBpjs
+          ? "Endpoint BPJS dilindungi CAPTCHA Sepulsa. Silakan klik tombol untuk membuka halaman Sepulsa."
+          : "Gateway Error 406: Endpoint dilindungi CAPTCHA / Tidak dapat diakses via API langsung";
       } else if (!errorMsg) {
         errorMsg = `Gateway Error HTTP ${err.response.status}`;
       }
@@ -269,9 +312,11 @@ throw requestErr;
         errorMessage: errorMsg,
         totalAmount: 0,
         formattedTotal: "Rp 0",
+        redirectUrl: isBpjs ? "https://www.sepulsa.com/transaction/bpjs-kesehatan" : null,
         details: {
           errorDetail: errorMsg,
           httpStatus: err.response.status,
+          redirectUrl: isBpjs ? "https://www.sepulsa.com/transaction/bpjs-kesehatan" : null,
         },
         source: "LIVE_SEPULSA",
         timestamp: new Date().toISOString(),
